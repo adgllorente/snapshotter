@@ -55,7 +55,7 @@ function isValidSnapshot(snapshotFile) {
  * @param {*} path
  */
 function getSnapshotFile(path) {
-  const homeFixedPath = path === "/" ? "index" : path;
+  const homeFixedPath = path === "/" ? "/index" : path;
 
   return `${process.env.DESTINATION}${homeFixedPath}.html`;
 }
