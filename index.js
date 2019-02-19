@@ -11,9 +11,9 @@ const browserPool = require("./browserPool");
  * @param {*} destination
  */
 async function createSnapshot(path, destination) {
-  const url = `${process.env.BASE}${path}`;
+  const url = `${process.env.BASE}/${path}`;
 
-  console.log("Generating snapshot", url, destination);
+  console.log("Creating snapshot", path, "at", destination);
 
   fs.removeSync(destination);
 
@@ -57,23 +57,25 @@ function isValidSnapshot(snapshotFile) {
 function getSnapshotFile(path) {
   const homeFixedPath = path === "/" ? "index" : path;
 
-  return `${process.env.DESTINATION}/${homeFixedPath}.html`;
+  return `${process.env.DESTINATION}${homeFixedPath}.html`;
 }
 
 app.get("/", async (req, res) => {
-  // try {
-  const requestedPath = req.query.url;
-  const snapshotFile = getSnapshotFile(requestedPath);
+  try {
+    const requestedPath = req.query.url;
+    const snapshotFile = getSnapshotFile(requestedPath);
 
-  if (!isValidSnapshot(snapshotFile)) {
-    await createSnapshot(requestedPath, snapshotFile);
+    if (!isValidSnapshot(snapshotFile)) {
+      await createSnapshot(requestedPath, snapshotFile);
+    } else {
+      console.log("Snapshot hit", snapshotFile);
+    }
+
+    res.sendFile(path.resolve(snapshotFile));
+  } catch (e) {
+    res.status(503);
+    res.send("Error generating snapshot");
   }
-
-  res.sendFile(path.resolve(snapshotFile));
-  // } catch (e) {
-  //   res.status(503);
-  //   res.send("Error generating snapshot");
-  // }
 });
 
 app.listen(process.env.PORT || 3000);
