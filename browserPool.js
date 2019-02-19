@@ -3,7 +3,9 @@ const puppeteer = require("puppeteer");
 
 const factory = {
   create: async function() {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+      args: ["--no-sandbox", "--disable-setuid-sandbox"]
+    });
     const page = await browser.newPage();
     await page.setViewport({ width: 800, height: 420 });
     return page;
