@@ -3,6 +3,7 @@ const fs = require("fs-extra");
 const puppeteer = require("puppeteer");
 const path = require("path");
 const app = express();
+const browserPool = require("./browserPool");
 
 /**
  * Creates a snapshot using puppeteer and deploys it in a given destination.
@@ -16,8 +17,7 @@ async function createSnapshot(path, destination) {
 
   fs.removeSync(destination);
 
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
+  const page = await browserPool.acquire();
 
   if (process.env.USER && process.env.PASS) {
     page.authenticate({
@@ -35,7 +35,7 @@ async function createSnapshot(path, destination) {
   fs.ensureFileSync(destination);
   fs.writeFileSync(destination, content);
 
-  await browser.close();
+  await browserPool.release(page);
 }
 
 /**
@@ -61,19 +61,19 @@ function getSnapshotFile(path) {
 }
 
 app.get("/", async (req, res) => {
-  try {
-    const requestedPath = req.query.url;
-    const snapshotFile = getSnapshotFile(requestedPath);
+  // try {
+  const requestedPath = req.query.url;
+  const snapshotFile = getSnapshotFile(requestedPath);
 
-    if (!isValidSnapshot(snapshotFile)) {
-      await createSnapshot(requestedPath, snapshotFile);
-    }
-
-    res.sendFile(path.resolve(snapshotFile));
-  } catch (e) {
-    res.status(503);
-    res.send("Error generating snapshot");
+  if (!isValidSnapshot(snapshotFile)) {
+    await createSnapshot(requestedPath, snapshotFile);
   }
+
+  res.sendFile(path.resolve(snapshotFile));
+  // } catch (e) {
+  //   res.status(503);
+  //   res.send("Error generating snapshot");
+  // }
 });
 
 app.listen(process.env.PORT || 3000);
